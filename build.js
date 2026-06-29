@@ -19,6 +19,9 @@ const https = require('https');
 const ROOT    = __dirname;
 const DIST    = path.join(ROOT, 'dist');
 const OUT     = path.join(DIST, 'migrador.html');
+// Copia publicable por GitHub Pages (sirve desde la carpeta /docs de la rama)
+const DOCS        = path.join(ROOT, 'docs');
+const OUT_PAGES   = path.join(DOCS, 'index.html');
 
 // ── Fuentes ────────────────────────────────────────────────────────
 const TEMPLATE  = path.join(ROOT, 'src', 'index.html');
@@ -104,8 +107,13 @@ async function build() {
 
   fs.writeFileSync(OUT, html, 'utf-8');
 
+  // Copia para GitHub Pages: docs/index.html
+  if (!fs.existsSync(DOCS)) fs.mkdirSync(DOCS);
+  fs.writeFileSync(OUT_PAGES, html, 'utf-8');
+
   const kb = (fs.statSync(OUT).size / 1024).toFixed(1);
-  console.log(`\n✅  dist/migrador.html generado (${kb} KB)\n`);
+  console.log(`\n✅  dist/migrador.html generado (${kb} KB)`);
+  console.log(`✅  docs/index.html generado (copia para GitHub Pages)\n`);
   console.log('  Abrir directamente en el navegador como file://');
   console.log('  O servir localmente: npx serve dist/\n');
 }
