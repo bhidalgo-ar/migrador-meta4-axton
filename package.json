@@ -1,0 +1,16 @@
+{
+  "name": "migrador-meta4-axton",
+  "version": "1.0.0",
+  "description": "Migrador de nómina Meta4 → AXTON para Hidalgo & Asociados",
+  "scripts": {
+    "build": "node build.js",
+    "dev": "npx serve dist/"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "private": true,
+  "dependencies": {
+    "xlsx": "^0.18.5"
+  }
+}

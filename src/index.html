@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Migrador Meta4 → AXTON · Hidalgo & Asociados</title>
+  <style>
+    /* ── Variables de marca H&A ─────────────────────────────── */
+    :root {
+      --celeste:      #00ACD4;
+      --celeste-dark: #0090B4;
+      --navy:         #1E3A5F;
+      --navy-deep:    #0F2133;
+      --gris:         #8C837B;
+      --off-white:    #F4F7FA;
+      --borde:        #DDE5EF;
+      --text-1:       #1E3A5F;
+      --text-2:       #4A6080;
+      --text-3:       #8FA3BA;
+      --success:      #22C55E;
+      --warning:      #F59E0B;
+      --error:        #E85518;
+      --sh-sm:        0 1px 4px rgba(30,58,95,0.08);
+      --sh:           0 4px 16px rgba(30,58,95,0.12);
+      --r:            14px;
+      --r-sm:         8px;
+      --font:         'Source Sans Pro', Arial, Helvetica, sans-serif;
+    }
+
+    /* ── Reset y base ───────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background:  var(--off-white);
+      color:       var(--text-1);
+      min-height:  100vh;
+      display:     flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    header {
+      background: var(--navy-deep);
+      padding:    16px 32px;
+      display:    flex;
+      align-items: center;
+      gap:        16px;
+    }
+    .logo-iso {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--celeste);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 14px; letter-spacing: -0.5px;
+      flex-shrink: 0;
+    }
+    .header-text h1 {
+      color: #fff; font-size: 16px; font-weight: 700; line-height: 1.2;
+    }
+    .header-text p {
+      color: var(--text-3); font-size: 12px; margin-top: 2px;
+    }
+
+    /* ── Layout principal ───────────────────────────────────── */
+    main {
+      flex: 1;
+      max-width: 860px;
+      width: 100%;
+      margin: 32px auto;
+      padding: 0 20px 40px;
+    }
+
+    /* ── Stepper ─────────────────────────────────────────────── */
+    .stepper {
+      display: flex;
+      gap: 0;
+      margin-bottom: 32px;
+      background: white;
+      border-radius: var(--r);
+      border: 1px solid var(--borde);
+      overflow: hidden;
+      box-shadow: var(--sh-sm);
+    }
+    .step {
+      flex: 1;
+      padding: 16px 12px;
+      text-align: center;
+      cursor: default;
+      border-right: 1px solid var(--borde);
+      transition: background 0.2s;
+    }
+    .step:last-child { border-right: none; }
+    .step-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--borde); color: var(--text-3);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; margin-bottom: 6px;
+    }
+    .step-label { font-size: 12px; font-weight: 600; color: var(--text-2); }
+    .step-sub   { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+    .step.active .step-num { background: var(--celeste); color: #fff; }
+    .step.active .step-label { color: var(--celeste); }
+    .step.done .step-num { background: var(--success); color: #fff; }
+    .step.done .step-label { color: var(--text-2); }
+
+    /* ── Card de paso ────────────────────────────────────────── */
+    .card {
+      background: white;
+      border-radius: var(--r);
+      border: 1px solid var(--borde);
+      box-shadow: var(--sh-sm);
+      padding: 28px 32px;
+      display: none;
+    }
+    .card.visible { display: block; }
+    .card h2 {
+      font-size: 20px; font-weight: 700; color: var(--navy);
+      margin-bottom: 6px;
+    }
+    .card .desc {
+      font-size: 14px; color: var(--text-2); margin-bottom: 24px; line-height: 1.55;
+    }
+
+    /* ── Formulario ──────────────────────────────────────────── */
+    .field { margin-bottom: 16px; }
+    label  { display: block; font-size: 13px; font-weight: 600; color: var(--text-1); margin-bottom: 6px; }
+    label .req { color: var(--error); margin-left: 2px; }
+
+    input[type="text"], input[type="file"] {
+      width: 100%; padding: 9px 12px;
+      border: 1px solid var(--borde); border-radius: var(--r-sm);
+      font-family: var(--font); font-size: 13px; color: var(--text-1);
+      background: white; outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:focus {
+      border-color: var(--celeste);
+      box-shadow: 0 0 0 3px rgba(0,172,212,0.12);
+    }
+    .input-hint { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+
+    /* ── Botones ─────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      border-radius: 9999px; font-family: var(--font); font-weight: 600;
+      font-size: 14px; letter-spacing: 0.02em; cursor: pointer; border: none;
+      padding: 10px 24px; transition: background 0.15s, box-shadow 0.15s;
+      white-space: nowrap;
+    }
+    .btn-primary { background: var(--celeste); color: #fff; }
+    .btn-primary:hover { background: var(--celeste-dark); box-shadow: 0 6px 20px rgba(0,172,212,0.22); }
+    .btn-outline {
+      background: transparent; color: var(--celeste);
+      border: 1.5px solid var(--celeste);
+    }
+    .btn-outline:hover { background: rgba(0,172,212,0.06); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+
+    /* ── Catálogos ───────────────────────────────────────────── */
+    .catalogos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+      margin: 20px 0;
+    }
+    .catalogo-card {
+      background: var(--off-white);
+      border: 1px solid var(--borde);
+      border-radius: var(--r-sm);
+      padding: 14px 16px;
+    }
+    .catalogo-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.09em; color: var(--celeste); margin-bottom: 4px;
+    }
+    .catalogo-count {
+      font-size: 28px; font-weight: 700; color: var(--navy); line-height: 1;
+    }
+    .catalogo-sub { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+    .catalogo-lista {
+      margin-top: 8px; max-height: 100px; overflow-y: auto;
+      font-size: 11px; color: var(--text-2); line-height: 1.6;
+    }
+
+    /* ── Alertas ─────────────────────────────────────────────── */
+    .alert-box {
+      border-radius: var(--r-sm); padding: 14px 16px; margin-bottom: 16px;
+      font-size: 13px; line-height: 1.55;
+    }
+    .alert-warning {
+      background: rgba(245,158,11,0.10); border: 1px solid rgba(245,158,11,0.32);
+      color: #92560A;
+    }
+    .alert-info {
+      background: rgba(0,172,212,0.10); border: 1px solid rgba(0,172,212,0.30);
+      color: #005F7A;
+    }
+    .alert-success {
+      background: rgba(34,197,94,0.10); border: 1px solid rgba(34,197,94,0.30);
+      color: #166534;
+    }
+    .alert-error {
+      background: rgba(232,85,24,0.10); border: 1px solid rgba(232,85,24,0.30);
+      color: #7C2D12;
+    }
+    .alert-title { font-weight: 700; margin-bottom: 6px; }
+    .alert-table {
+      width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px;
+    }
+    .alert-table th { background: rgba(0,0,0,0.06); text-align: left; padding: 4px 8px; }
+    .alert-table td { padding: 4px 8px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+
+    /* ── Resultado final ─────────────────────────────────────── */
+    .result-hero {
+      text-align: center; padding: 32px 0 24px;
+    }
+    .result-icon {
+      font-size: 48px; margin-bottom: 12px;
+    }
+    .result-title { font-size: 22px; font-weight: 700; color: var(--navy); }
+    .result-sub   { font-size: 14px; color: var(--text-2); margin-top: 6px; }
+
+    /* ── Footer ──────────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 16px;
+      font-size: 11px;
+      color: var(--text-3);
+      border-top: 1px solid var(--borde);
+    }
+
+    /* ── Spinner ─────────────────────────────────────────────── */
+    .spinner {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 2.5px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-iso">H&amp;A</div>
+  <div class="header-text">
+    <h1>Migrador Meta4 → AXTON</h1>
+    <p>Hidalgo &amp; Asociados · Importador de Legajos</p>
+  </div>
+</header>
+
+<main>
+
+  <!-- STEPPER -->
+  <div class="stepper" id="stepper">
+    <div class="step active" id="tab1">
+      <div class="step-num">1</div>
+      <div class="step-label">Cargar nómina</div>
+      <div class="step-sub">Archivo + CUIT</div>
+    </div>
+    <div class="step" id="tab2">
+      <div class="step-num">2</div>
+      <div class="step-label">Catálogos AXTON</div>
+      <div class="step-sub">Crear antes de importar</div>
+    </div>
+    <div class="step" id="tab3">
+      <div class="step-num">3</div>
+      <div class="step-label">Generar legajos</div>
+      <div class="step-sub">Descargar Excel</div>
+    </div>
+  </div>
+
+  <!-- PASO 1 -->
+  <div class="card visible" id="card1">
+    <h2>Paso 1 — Cargar nómina</h2>
+    <p class="desc">
+      Subí el Excel exportado desde Meta4 (hoja "Hoja1") e ingresá el CUIT de la empresa.
+      El CUIT se escribe en la celda B1 del importador de AXTON.
+    </p>
+
+    <div class="field">
+      <label>Archivo de nómina (Meta4) <span class="req">*</span></label>
+      <input type="file" id="archivoMeta4" accept=".xlsx,.xls">
+      <p class="input-hint">Formato: .xlsx o .xls exportado desde Meta4</p>
+    </div>
+
+    <div class="field">
+      <label>CUIT de la empresa <span class="req">*</span></label>
+      <input type="text" id="cuitEmpresa" placeholder="30-12345678-9" maxlength="13">
+      <p class="input-hint">11 dígitos, con o sin guiones</p>
+    </div>
+
+    <div id="error1" class="alert-box alert-error" style="display:none;margin-top:12px;"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnPaso1" onclick="handlePaso1()">
+        Continuar
+        <div class="spinner" id="spin1"></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- PASO 2 -->
+  <div class="card" id="card2">
+    <h2>Paso 2 — Catálogos a crear en AXTON</h2>
+    <p class="desc">
+      Antes de generar el Excel, creá estos valores en las tablas maestras de AXTON.
+      La herramienta extrajo los valores únicos que aparecen en tu nómina.
+      Una vez creados en AXTON, podés continuar.
+    </p>
+
+    <div class="alert-box alert-info">
+      <div class="alert-title">⚠ Importante</div>
+      Si un legajo apunta a un valor que no existe en AXTON, ese campo rebota al importar.
+      Creá todos los valores de las tablas de abajo antes de continuar con el Paso 3.
+    </div>
+
+    <div id="catalogosGrid" class="catalogos-grid"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="handleDescargarCatalogos()">
+        ↓ Descargar catálogos (.txt)
+      </button>
+      <button class="btn btn-primary" onclick="handlePaso2()">
+        Ya los creé en AXTON — Continuar
+      </button>
+    </div>
+  </div>
+
+  <!-- PASO 3 -->
+  <div class="card" id="card3">
+    <h2>Paso 3 — Generar Excel de legajos</h2>
+    <p class="desc">
+      Generá el Excel de importación AXTON con todos los mapeos, codificaciones y
+      valores fijos aplicados. El archivo queda listo para subir directamente al importador.
+    </p>
+
+    <div class="alert-box alert-info">
+      <div class="alert-title">✓ Listo para generar</div>
+      Se van a procesar <strong id="totalFilasInfo">—</strong> empleados.
+      Los campos sin equivalencia (código 0) se dejarán vacíos y se listarán abajo.
+    </div>
+
+    <div id="error3" class="alert-box alert-error" style="display:none;margin-top:12px;"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnGenerar" onclick="handlePaso3()">
+        ⬇ Generar y descargar Excel
+        <div class="spinner" id="spin3"></div>
+      </button>
+      <button class="btn btn-outline" onclick="reiniciar()">Nuevo archivo</button>
+    </div>
+
+    <!-- Alertas post-generación -->
+    <div id="alertasResult" style="margin-top:24px;"></div>
+  </div>
+
+</main>
+
+<footer>
+  Hidalgo &amp; Asociados · Migrador Meta4 → AXTON v1.0 · Solo para uso interno
+</footer>
+
+<!-- ================================================================
+     DEPENDENCIAS: SheetJS + datos inyectados por build.js
+     ================================================================ -->
+
+<!-- {{SHEETJS_PLACEHOLDER}} -->
+<!-- {{TABLAS_PLACEHOLDER}} -->
+<!-- {{VALORES_FIJOS_PLACEHOLDER}} -->
+
+<!-- ================================================================
+     MÓDULOS SRC (inyectados por build.js)
+     ================================================================ -->
+
+<!-- {{XLSX_IO_PLACEHOLDER}} -->
+<!-- {{CODIFICACION_PLACEHOLDER}} -->
+<!-- {{CATALOGOS_PLACEHOLDER}} -->
+<!-- {{TRANSFORMAR_PLACEHOLDER}} -->
+
+<script>
+// ── UI helpers ──────────────────────────────────────────────────────
+function mostrarError(id, msg) {
+  const el = document.getElementById(id);
+  el.innerHTML = `<div class="alert-title">Error</div>${msg}`;
+  el.style.display = 'block';
+}
+function ocultarError(id) {
+  document.getElementById(id).style.display = 'none';
+}
+function activarPaso(n) {
+  [1, 2, 3].forEach(i => {
+    document.getElementById(`card${i}`).classList.toggle('visible', i === n);
+    const tab = document.getElementById(`tab${i}`);
+    tab.classList.remove('active', 'done');
+    if (i < n)  tab.classList.add('done');
+    if (i === n) tab.classList.add('active');
+  });
+}
+function spinner(id, visible) {
+  document.getElementById(id).style.display = visible ? 'inline-block' : 'none';
+}
+
+// ── Paso 1 ──────────────────────────────────────────────────────────
+async function handlePaso1() {
+  ocultarError('error1');
+  const archivo = document.getElementById('archivoMeta4').files[0];
+  const cuit    = document.getElementById('cuitEmpresa').value.trim();
+  spinner('spin1', true);
+  document.getElementById('btnPaso1').disabled = true;
+  try {
+    const catalogos = await ejecutarPaso1(archivo, cuit);
+    renderizarCatalogos(catalogos);
+    document.getElementById('totalFilasInfo').textContent = estado.filasMeta4.length;
+    activarPaso(2);
+  } catch (e) {
+    mostrarError('error1', e.message);
+  } finally {
+    spinner('spin1', false);
+    document.getElementById('btnPaso1').disabled = false;
+  }
+}
+
+function renderizarCatalogos(catalogos) {
+  const grid = document.getElementById('catalogosGrid');
+  grid.innerHTML = '';
+  for (const [, datos] of Object.entries(catalogos)) {
+    const lista = datos.valores.map(v => `<div>${v}</div>`).join('');
+    grid.innerHTML += `
+      <div class="catalogo-card">
+        <div class="catalogo-label">${datos.label}</div>
+        <div class="catalogo-count">${datos.count}</div>
+        <div class="catalogo-sub">valores únicos</div>
+        <div class="catalogo-lista">${lista}</div>
+      </div>`;
+  }
+}
+
+// ── Paso 2 ──────────────────────────────────────────────────────────
+function handlePaso2() {
+  confirmarCatalogos();
+  activarPaso(3);
+}
+function handleDescargarCatalogos() {
+  const cuit = document.getElementById('cuitEmpresa').value.trim() || 'empresa';
+  descargarCatalogos(estado.catalogos, cuit);
+}
+
+// ── Paso 3 ──────────────────────────────────────────────────────────
+function handlePaso3() {
+  ocultarError('error3');
+  spinner('spin3', true);
+  document.getElementById('btnGenerar').disabled = true;
+  // Usar setTimeout para que el spinner se pinte antes del loop pesado
+  setTimeout(() => {
+    try {
+      const { blob, alertas, totalFilas } = ejecutarPaso3();
+      const fecha  = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const cuit   = estado.cuitEmpresa || 'empresa';
+      descargarBlob(blob, `Legajos_AXTON_${cuit}_${fecha}`);
+      renderizarAlertas(alertas, totalFilas);
+    } catch (e) {
+      mostrarError('error3', e.message);
+    } finally {
+      spinner('spin3', false);
+      document.getElementById('btnGenerar').disabled = false;
+    }
+  }, 50);
+}
+
+function renderizarAlertas(alertas, total) {
+  const div = document.getElementById('alertasResult');
+  div.innerHTML = '';
+
+  // Resultado general
+  div.innerHTML += `
+    <div class="alert-box alert-success">
+      <div class="alert-title">✓ Excel generado</div>
+      ${total} empleados procesados. Revisá las alertas debajo si las hay.
+    </div>`;
+
+  if (!alertas.length) return;
+
+  const { codigoCero, codigoDesconocido } = clasificarAlertas(alertas);
+
+  if (codigoCero.length) {
+    const filas = codigoCero.map(a =>
+      `<tr><td>${a.legajo}</td><td>${a.campo}</td><td>El campo se dejó vacío. Completar a mano en AXTON o corregir en Meta4 y reimportar.</td></tr>`
+    ).join('');
+    div.innerHTML += `
+      <div class="alert-box alert-warning">
+        <div class="alert-title">⚠ ${codigoCero.length} campo(s) con código '0' sin equivalencia</div>
+        <p style="font-size:12px;margin-bottom:6px;">
+          Los empleados listados están incluidos en el Excel. El campo afectado quedó vacío.
+          Completalo a mano en AXTON o corregí el valor en Meta4 y volvé a generar.
+        </p>
+        <table class="alert-table">
+          <thead><tr><th>Legajo</th><th>Campo</th><th>Acción requerida</th></tr></thead>
+          <tbody>${filas}</tbody>
+        </table>
+      </div>`;
+  }
+
+  if (codigoDesconocido.length) {
+    const filas = codigoDesconocido.map(a =>
+      `<tr><td>${a.legajo}</td><td>${a.campo}</td><td>${a.valorMeta4}</td><td>${a.mensaje}</td></tr>`
+    ).join('');
+    div.innerHTML += `
+      <div class="alert-box alert-error">
+        <div class="alert-title">✗ ${codigoDesconocido.length} código(s) no encontrado(s) en tabla universal</div>
+        <table class="alert-table">
+          <thead><tr><th>Legajo</th><th>Campo</th><th>Valor Meta4</th><th>Detalle</th></tr></thead>
+          <tbody>${filas}</tbody>
+        </table>
+      </div>`;
+  }
+}
+
+// ── Reiniciar ────────────────────────────────────────────────────────
+function reiniciar() {
+  document.getElementById('archivoMeta4').value = '';
+  document.getElementById('cuitEmpresa').value  = '';
+  document.getElementById('alertasResult').innerHTML = '';
+  estado.filasMeta4 = null;
+  estado.catalogos  = null;
+  estado.cuitEmpresa = '';
+  estado.alertas    = [];
+  estado.paso       = 1;
+  activarPaso(1);
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "_descripcion": "Valores fijos que se escriben igual para los 138 empleados, independientemente de la empresa.",
+  "_fuente": "Acordado con cliente en sesión de relevamiento — junio 2026",
+
+  "AFJP":               "S.I.P.A",
+  "LiquidaGanancias":   "1",
+  "ParametrosGanancias":"1",
+  "TipoCuenta":         "Caja de Ahorro",
+
+  "_nota_operacion": "La operación es siempre ALTA (alta de legajo). Nunca modificación ni baja.",
+  "_nota_cuit":      "El CUIT de la empresa va en la celda B1 de la plantilla. Se ingresa como parámetro obligatorio en la UI por empresa."
+}
