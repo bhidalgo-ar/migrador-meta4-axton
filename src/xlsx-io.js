@@ -8,6 +8,28 @@
  * CBU, NumeroCuenta, CodigoPostal, Documento).
  */
 
+// Encabezados de la fila 2 de la plantilla oficial AXTON (hoja "legajos").
+// 75 columnas en su orden exacto A→BW. Las columnas que la herramienta NO
+// completa (Barrio, CAT, Categoria, Presupuesto, etc.) quedan con título y
+// celda vacía: NO se eliminan ni se reordenan.
+const ENCABEZADOS_AXTON = [
+  'Legajo','CUIL','Apellido','Nombres','ApellidoCasada','Sexo',          // A–F
+  'TipoDocumento','Documento','Nacimiento','Nacionalidad','EstadoCivil', // G–K
+  'AFJP','Calle','Numero','Piso','Departamento','CodigoPostal',          // L–Q
+  'Localidad','Provincia','Barrio','EntreCalles','Telefono','Email',     // R–W
+  'CAT','Ingreso','AntiguedadReconocida','ObraSocial','Categoria',       // X–AB
+  'Calificacion','Convenio','SectorInterno','LugarPago','ModalidadSIJP', // AC–AG
+  'Cargo','UnidadNegocio','Presupuesto','Observaciones','TipoSueldo',    // AH–AL
+  'SueldoBasico','Adicional1','Adicional2','SueldoFactura','Jornada',    // AM–AQ
+  'HorasMensuales','CoeficienteSF','CentroCosto','Rama','Filial',        // AR–AV
+  'Celular','BaseObraSocial','NivelEstudios','ZonaGeografica',           // AW–AZ
+  'PosibleBanco','PosibleSucursal','PlanObraSocial','LiquidaGanancias',  // BA–BD
+  'ParametrosGanancias','Area','Seccion','Banco','SucursalBanco',        // BE–BI
+  'TipoCuenta','NumeroCuenta','CBU','Principal','Prioridad','Comentario', // BJ–BO
+  'Porcentaje','FormaCobro','CondicionSIJP','Siniestrado','Actividad',   // BP–BT
+  'Usuario','Clave','MailSeguridad'                                      // BU–BW
+];
+
 // Columnas que DEBEN ser texto en el Excel de salida (nunca número)
 const COLS_TEXTO = [
   'Legajo', 'CUIL', 'ObraSocial', 'CBU', 'NumeroCuenta',
@@ -45,17 +67,11 @@ function leerMeta4(buffer) {
 function generarExcelAxton(legajos, cuitEmpresa) {
   const wb = XLSX.utils.book_new();
 
-  // Encabezados en fila 2 (la fila 1 es para el CUIT de empresa)
-  const encabezados = [
-    'Legajo','CUIL','Apellido','Nombres','ApellidoCasada','Sexo',
-    'TipoDocumento','Documento','Nacimiento','Nacionalidad','EstadoCivil',
-    'AFJP','Calle','Numero','Piso','Departamento','CodigoPostal',
-    'Localidad','Provincia','EntreCalles','Telefono','Email',
-    'Ingreso','AntiguedadReconocida','ObraSocial','PlanObraSocial',
-    'Convenio','Cargo','CentroCosto','UnidadNegocio','Filial',
-    'ModalidadSIJP','Banco','TipoCuenta','NumeroCuenta','CBU',
-    'LiquidaGanancias','ParametrosGanancias'
-  ];
+  // Encabezados en fila 2 (la fila 1 es para el CUIT de empresa).
+  // ORDEN Y COLUMNAS EXACTOS de la plantilla oficial del importador AXTON
+  // (hoja "legajos", 75 columnas A→BW). NO alterar, agregar ni quitar columnas:
+  // las que la herramienta no completa van con su título y celda vacía.
+  const encabezados = ENCABEZADOS_AXTON;
 
   // Construir array de arrays: fila 1 vacía excepto B1, fila 2 encabezados, fila 3+ datos
   const filas = [];

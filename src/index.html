@@ -321,8 +321,9 @@
     <div id="catalogosGrid" class="catalogos-grid"></div>
 
     <div class="btn-row">
+      <button class="btn btn-outline" onclick="volverPaso(1)">← Volver</button>
       <button class="btn btn-outline" onclick="handleDescargarCatalogos()">
-        ↓ Descargar catálogos (.txt)
+        ↓ Descargar catálogos (.xlsx)
       </button>
       <button class="btn btn-primary" onclick="handlePaso2()">
         Ya los creé en AXTON — Continuar
@@ -347,6 +348,7 @@
     <div id="error3" class="alert-box alert-error" style="display:none;margin-top:12px;"></div>
 
     <div class="btn-row">
+      <button class="btn btn-outline" onclick="volverPaso(2)">← Volver</button>
       <button class="btn btn-primary" id="btnGenerar" onclick="handlePaso3()">
         ⬇ Generar y descargar Excel
         <div class="spinner" id="spin3"></div>
@@ -437,6 +439,14 @@ function renderizarCatalogos(catalogos) {
         <div class="catalogo-lista">${lista}</div>
       </div>`;
   }
+}
+
+// ── Navegación: volver a un paso anterior ───────────────────────────
+// Conserva los datos ya cargados (archivo, CUIT, catálogos). Solo cambia
+// la vista activa para que el usuario pueda revisar o corregir.
+function volverPaso(n) {
+  estado.paso = n;
+  activarPaso(n);
 }
 
 // ── Paso 2 ──────────────────────────────────────────────────────────

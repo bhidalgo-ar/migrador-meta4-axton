@@ -39,35 +39,61 @@ function extraerCatalogos(filasMeta4) {
 }
 
 /**
- * Genera un texto plano con los catálogos, apto para copiar/pegar o descargar.
+ * Genera un Excel (.xlsx) con los catálogos, un catálogo por columna.
+ * Fila 1: encabezado "Label (N)". Filas 2+: valores únicos, todos como texto
+ * (para preservar códigos como Convenio "74/1975" o ceros a la izquierda).
  *
  * @param {Object} catalogos  Resultado de extraerCatalogos()
- * @returns {string}
+ * @returns {Blob}
  */
-function catalogosATexto(catalogos) {
-  const lineas = ['CATÁLOGOS A CREAR EN AXTON', '='.repeat(40), ''];
-  for (const [campo, datos] of Object.entries(catalogos)) {
-    lineas.push(`${datos.label.toUpperCase()} (${datos.count} valores)`);
-    lineas.push('-'.repeat(30));
-    datos.valores.forEach(v => lineas.push(`  ${v}`));
-    lineas.push('');
+function generarExcelCatalogos(catalogos) {
+  const entradas = Object.values(catalogos);
+  const maxFilas = Math.max(0, ...entradas.map(d => d.valores.length));
+
+  // Array de arrays: fila 0 = encabezados, filas 1+ = valores apilados por columna
+  const aoa = [];
+  aoa.push(entradas.map(d => `${d.label} (${d.count})`));
+  for (let r = 0; r < maxFilas; r++) {
+    aoa.push(entradas.map(d => d.valores[r] ?? ''));
   }
-  return lineas.join('\n');
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+  // Forzar texto en todas las celdas de datos (nunca número)
+  for (let c = 0; c < entradas.length; c++) {
+    for (let r = 1; r <= maxFilas; r++) {
+      const ref = XLSX.utils.encode_cell({ r, c });
+      const val = aoa[r] && aoa[r][c];
+      if (val !== '' && val != null) {
+        ws[ref] = { t: 's', v: String(val), w: String(val) };
+      }
+    }
+  }
+
+  // Ancho de columna cómodo
+  ws['!cols'] = entradas.map(() => ({ wch: 28 }));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Catálogos AXTON');
+
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  return new Blob([wbout], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
 }
 
 /**
- * Descarga los catálogos como archivo .txt.
+ * Descarga los catálogos como archivo .xlsx.
  *
  * @param {Object} catalogos
  * @param {string} nombreEmpresa  Para personalizar el nombre del archivo
  */
 function descargarCatalogos(catalogos, nombreEmpresa = 'empresa') {
-  const texto = catalogosATexto(catalogos);
-  const blob  = new Blob([texto], { type: 'text/plain;charset=utf-8' });
-  const url   = URL.createObjectURL(blob);
-  const a     = document.createElement('a');
-  a.href      = url;
-  a.download  = `catalogos_axton_${nombreEmpresa.replace(/\s+/g, '_')}.txt`;
+  const blob = generarExcelCatalogos(catalogos);
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `catalogos_axton_${nombreEmpresa.replace(/\s+/g, '_')}.xlsx`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
