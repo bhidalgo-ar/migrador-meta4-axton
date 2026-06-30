@@ -63,59 +63,54 @@ async function getSheetJS() {
 }
 
 // ── Build ──────────────────────────────────────────────────────────
+/** Inyecta los módulos JS y JSON en un HTML base. */
+function injectModules(html, sheetjsBlock, tablas, fijos) {
+  const modNames = ['XLSX_IO', 'CODIFICACION', 'CATALOGOS', 'TRANSFORMAR'];
+  html = html
+    .replace('<!-- {{SHEETJS_PLACEHOLDER}} -->',      sheetjsBlock)
+    .replace('<!-- {{TABLAS_PLACEHOLDER}} -->',        `<script>\nwindow.TABLAS_UNIVERSALES = ${tablas};\n</script>`)
+    .replace('<!-- {{VALORES_FIJOS_PLACEHOLDER}} -->', `<script>\nwindow.VALORES_FIJOS = ${fijos};\n</script>`);
+  JS_MODS.forEach((modPath, i) => {
+    html = html.replace(
+      `<!-- {{${modNames[i]}_PLACEHOLDER}} -->`,
+      `<script>\n${readFile(modPath)}\n</script>`
+    );
+  });
+  return html;
+}
+
 async function build() {
   console.log('\n🔨  Migrador Meta4→AXTON — Build\n');
 
   if (!fs.existsSync(DIST)) fs.mkdirSync(DIST);
-
-  let html = readFile(TEMPLATE);
-
-  // 1. SheetJS
-  const sheetjs = await getSheetJS();
-  html = html.replace(
-    '<!-- {{SHEETJS_PLACEHOLDER}} -->',
-    `<script>\n${sheetjs}\n</script>`
-  );
-  console.log('  ✓ SheetJS incrustado');
-
-  // 2. Tablas universales
-  const tablas = readFile(TABLAS_JSON);
-  html = html.replace(
-    '<!-- {{TABLAS_PLACEHOLDER}} -->',
-    `<script>\nwindow.TABLAS_UNIVERSALES = ${tablas};\n</script>`
-  );
-  console.log('  ✓ tablas-universales.json incrustado');
-
-  // 3. Valores fijos
-  const fijos = readFile(FIJOS_JSON);
-  html = html.replace(
-    '<!-- {{VALORES_FIJOS_PLACEHOLDER}} -->',
-    `<script>\nwindow.VALORES_FIJOS = ${fijos};\n</script>`
-  );
-  console.log('  ✓ valores-fijos.json incrustado');
-
-  // 4. Módulos JS
-  const modNames = ['XLSX_IO', 'CODIFICACION', 'CATALOGOS', 'TRANSFORMAR'];
-  JS_MODS.forEach((modPath, i) => {
-    const code = readFile(modPath);
-    html = html.replace(
-      `<!-- {{${modNames[i]}_PLACEHOLDER}} -->`,
-      `<script>\n${code}\n</script>`
-    );
-    console.log(`  ✓ ${path.basename(modPath)} incrustado`);
-  });
-
-  fs.writeFileSync(OUT, html, 'utf-8');
-
-  // Copia para GitHub Pages: docs/index.html
   if (!fs.existsSync(DOCS)) fs.mkdirSync(DOCS);
-  fs.writeFileSync(OUT_PAGES, html, 'utf-8');
 
+  const template = readFile(TEMPLATE);
+  const tablas   = readFile(TABLAS_JSON);
+  const fijos    = readFile(FIJOS_JSON);
+
+  // ── dist/migrador.html: SheetJS embebido inline (funciona offline) ──
+  const sheetjs = await getSheetJS();
+  const htmlOffline = injectModules(
+    template,
+    `<script>\n${sheetjs}\n</script>`,
+    tablas, fijos
+  );
+  fs.writeFileSync(OUT, htmlOffline, 'utf-8');
   const kb = (fs.statSync(OUT).size / 1024).toFixed(1);
-  console.log(`\n✅  dist/migrador.html generado (${kb} KB)`);
-  console.log(`✅  docs/index.html generado (copia para GitHub Pages)\n`);
-  console.log('  Abrir directamente en el navegador como file://');
-  console.log('  O servir localmente: npx serve dist/\n');
+  console.log(`  ✓ dist/migrador.html generado (${kb} KB, offline-ready)`);
+
+  // ── docs/index.html: SheetJS via CDN <script src> (GitHub Pages) ──
+  // Cargar via CDN es más confiable que embeber 800 KB inline en HTTPS.
+  const sheetjsCdnTag = `<script src="${SHEETJS_CDN}" crossorigin="anonymous"></script>`;
+  const htmlPages = injectModules(template, sheetjsCdnTag, tablas, fijos);
+  fs.writeFileSync(OUT_PAGES, htmlPages, 'utf-8');
+  const kbP = (fs.statSync(OUT_PAGES).size / 1024).toFixed(1);
+  console.log(`  ✓ docs/index.html generado (${kbP} KB, CDN SheetJS para GitHub Pages)`);
+
+  console.log('\n✅  Build completo\n');
+  console.log('  Offline:      dist/migrador.html  (abrir como file://)');
+  console.log('  GitHub Pages: docs/index.html     (requiere internet)\n');
 }
 
 build().catch(err => {
