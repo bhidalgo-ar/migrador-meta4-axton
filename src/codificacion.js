@@ -151,5 +151,9 @@ function transformarFila(fila, alertas) {
     // ── Impuestos (valores fijos) ─────────────────────────────────────
     LiquidaGanancias:     F.LiquidaGanancias,
     ParametrosGanancias:  F.ParametrosGanancias,
+
+    // ── Valores fijos para todos los empleados ────────────────────────
+    Actividad:            F.Actividad,
+    Principal:            F.Principal,
   };
 }

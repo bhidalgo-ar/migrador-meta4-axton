@@ -6,6 +6,8 @@
   "LiquidaGanancias":   "1",
   "ParametrosGanancias":"1",
   "TipoCuenta":         "Caja de Ahorro",
+  "Actividad":          "49",
+  "Principal":          "SI",
 
   "_nota_operacion": "La operación es siempre ALTA (alta de legajo). Nunca modificación ni baja.",
   "_nota_cuit":      "El CUIT de la empresa va en la celda B1 de la plantilla. Se ingresa como parámetro obligatorio en la UI por empresa."

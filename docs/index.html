@@ -484,6 +484,8 @@ window.VALORES_FIJOS = {
   "LiquidaGanancias":   "1",
   "ParametrosGanancias":"1",
   "TipoCuenta":         "Caja de Ahorro",
+  "Actividad":          "49",
+  "Principal":          "SI",
 
   "_nota_operacion": "La operación es siempre ALTA (alta de legajo). Nunca modificación ni baja.",
   "_nota_cuit":      "El CUIT de la empresa va en la celda B1 de la plantilla. Se ingresa como parámetro obligatorio en la UI por empresa."
@@ -534,24 +536,83 @@ const COLS_TEXTO = [
   'CodigoPostal', 'Documento', 'Telefono'
 ];
 
+// Columnas de fecha de origen (Meta4). Siempre se normalizan a DD/MM/AAAA
+// sin importar el formato con el que vengan formateadas en el Excel de origen.
+const CAMPOS_FECHA_META4 = ['FEC_NACIMIENTO', 'FEC_ALTA_EMPLEADO', 'FEC_ANTIGUEDAD'];
+
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
+/**
+ * Normaliza cualquier valor de fecha (Date de SheetJS, serial de Excel o
+ * texto en distintos formatos) al formato DD/MM/AAAA (día y mes con 2
+ * dígitos, año con 4).
+ *
+ * @param {Date|number|string} valor
+ * @returns {string}
+ */
+function formatearFecha(valor) {
+  if (valor === null || valor === undefined || valor === '') return '';
+
+  // Date (SheetJS con cellDates:true) — usar UTC para no correr un día
+  // por el desfasaje de zona horaria del navegador.
+  if (valor instanceof Date && !isNaN(valor.getTime())) {
+    return `${pad2(valor.getUTCDate())}/${pad2(valor.getUTCMonth() + 1)}/${valor.getUTCFullYear()}`;
+  }
+
+  // Número: serial de fecha de Excel (días desde 1899-12-30)
+  if (typeof valor === 'number' && !isNaN(valor)) {
+    const base = Date.UTC(1899, 11, 30);
+    const d = new Date(base + Math.round(valor) * 86400000);
+    return `${pad2(d.getUTCDate())}/${pad2(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`;
+  }
+
+  const s = String(valor).trim();
+  if (!s) return '';
+
+  // AAAAMMDD (8 dígitos sin separador)
+  let m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+
+  // AAAA-MM-DD o AAAA/MM/DD (ISO)
+  m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+  if (m) return `${pad2(m[3])}/${pad2(m[2])}/${m[1]}`;
+
+  // DD/MM/AAAA o DD-MM-AAAA (ya viene en orden día-mes-año: solo normalizar)
+  m = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  if (m) return `${pad2(m[1])}/${pad2(m[2])}/${m[3]}`;
+
+  // No se pudo interpretar el formato: devolver tal cual
+  return s;
+}
+
 /**
  * Lee el archivo Meta4 desde un ArrayBuffer y devuelve array de objetos.
- * Todas las celdas se leen como texto (raw: false) para no perder ceros.
+ * Todas las celdas se leen como texto (raw: false) para no perder ceros,
+ * excepto las columnas de fecha, que se leen en crudo (raw: true, con
+ * cellDates:true ya quedan como Date) para poder normalizarlas siempre a
+ * DD/MM/AAAA sin depender del formato de la celda de origen.
  *
  * @param {ArrayBuffer} buffer
  * @returns {Object[]} filas como objetos { columna: valor }
  */
 function leerMeta4(buffer) {
   const wb = XLSX.read(new Uint8Array(buffer), {
-    type:     'array',
-    raw:      false,   // nunca convertir a número
-    cellText: true,
+    type:      'array',
     cellDates: true,
   });
   const ws = wb.Sheets[wb.SheetNames[0]];
-  return XLSX.utils.sheet_to_json(ws, {
-    defval: '',
-    raw:    false,
+
+  const filasTexto = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
+  const filasCrudas = XLSX.utils.sheet_to_json(ws, { defval: '', raw: true });
+
+  return filasTexto.map((fila, i) => {
+    const crudos = filasCrudas[i] || {};
+    for (const campo of CAMPOS_FECHA_META4) {
+      if (campo in fila) fila[campo] = formatearFecha(crudos[campo]);
+    }
+    return fila;
   });
 }
 
@@ -782,6 +843,10 @@ function transformarFila(fila, alertas) {
     // ── Impuestos (valores fijos) ─────────────────────────────────────
     LiquidaGanancias:     F.LiquidaGanancias,
     ParametrosGanancias:  F.ParametrosGanancias,
+
+    // ── Valores fijos para todos los empleados ────────────────────────
+    Actividad:            F.Actividad,
+    Principal:            F.Principal,
   };
 }
 
