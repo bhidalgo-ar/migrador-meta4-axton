@@ -5,3 +5,6 @@ dist/
 # Archivos de sistema
 .DS_Store
 Thumbs.db
+
+# Worktrees temporales de agentes (Claude Code)
+.claude/worktrees/
