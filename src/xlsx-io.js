@@ -98,6 +98,7 @@ function formatearFecha(valor) {
  * @returns {Object[]} filas como objetos { columna: valor }
  */
 function leerMeta4(buffer) {
+  const XLSX = window.XLSX;
   const wb = XLSX.read(new Uint8Array(buffer), {
     type:      'array',
     cellDates: true,
@@ -124,6 +125,7 @@ function leerMeta4(buffer) {
  * @returns {Blob}
  */
 function generarExcelAxton(legajos, cuitEmpresa) {
+  const XLSX = window.XLSX;
   const wb = XLSX.utils.book_new();
 
   // Encabezados en fila 2 (la fila 1 es para el CUIT de empresa).

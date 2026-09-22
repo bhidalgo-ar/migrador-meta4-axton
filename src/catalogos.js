@@ -47,6 +47,7 @@ function extraerCatalogos(filasMeta4) {
  * @returns {Blob}
  */
 function generarExcelCatalogos(catalogos) {
+  const XLSX = window.XLSX;
   const entradas = Object.values(catalogos);
   const maxFilas = Math.max(0, ...entradas.map(d => d.valores.length));
 
